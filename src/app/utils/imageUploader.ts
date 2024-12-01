@@ -2,8 +2,9 @@ import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 import { v2 as cloudinary } from 'cloudinary'
-import { TCloudinaryResponse, TFile } from '../interfaces/file'
+
 import config from '../config'
+import { TCloudinaryResponse, TFile } from '../interface/file'
 
 cloudinary.config({
   cloud_name: config.cloudinary.cloudinary_cloud_name,

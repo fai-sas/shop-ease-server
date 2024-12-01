@@ -15,7 +15,7 @@ app.use(cors())
 app.use(cookieParser())
 
 // application routes
-app.use('/api', router)
+app.use('/api/v1', router)
 
 app.get('/', (req: Request, res: Response) => {
   res.send(`
