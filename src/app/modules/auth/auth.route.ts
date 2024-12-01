@@ -7,4 +7,6 @@ router.post('/create-customer', AuthController.createCustomer)
 
 router.post('/create-vendor', AuthController.createVendor)
 
+router.post('/login', AuthController.loginUser)
+
 export const authRoutes = router

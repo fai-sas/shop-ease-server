@@ -25,7 +25,29 @@ const createVendor = catchAsync(async (req, res) => {
   })
 })
 
+const loginUser = catchAsync(async (req, res) => {
+  const result = await AuthService.loginUserIntoDb(req.body)
+
+  const { refreshToken } = result
+
+  res.cookie('refreshToken', refreshToken, {
+    secure: false,
+    httpOnly: true,
+  })
+
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: 'Logged in Successfully!',
+    data: {
+      accessToken: result.accessToken,
+      needPasswordChange: result.needPasswordChange,
+    },
+  })
+})
+
 export const AuthController = {
   createCustomer,
   createVendor,
+  loginUser,
 }
