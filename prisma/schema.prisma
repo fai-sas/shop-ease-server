@@ -29,7 +29,7 @@ model User {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   vendor             Vendor?
-  customers          Customers?
+  customer           Customer?
 
   @@map("users")
 }
@@ -39,17 +39,22 @@ model Vendor {
   name          String
   email         String   @unique
   profilePhoto  String?
-  contactNumber String
+  description   String?
+  contactNumber String?
   isDeleted     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [email], references: [email])
 
+  products  Product[]
+  orders    Order[]
+  followers VendorFollow[]
+
   @@map("vendors")
 }
 
-model Customers {
+model Customer {
   id            String   @id @default(uuid())
   name          String
   email         String   @unique
@@ -61,5 +66,130 @@ model Customers {
 
   user User @relation(fields: [email], references: [email])
 
+  reviews        Review[]
+  orders         Order[]
+  cartItems      CartItem[]
+  recentlyViewed RecentlyViewed[]
+  follows        VendorFollow[]
+
   @@map("customers")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Int
+  discount    Int      @default(0)
+  inventory   Int
+  isDeleted   Boolean  @default(false)
+  categoryId  String
+  vendorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vendor         Vendor           @relation(fields: [vendorId], references: [id])
+  category       Category         @relation(fields: [categoryId], references: [id])
+  reviews        Review[]
+  orderItems     OrderItem[]
+  cartItem       CartItem[]
+  recentlyViewed RecentlyViewed[]
+
+  @@map("products")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String?
+  productId  String
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("reviews")
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  customerId    String
+  vendorId      String
+  totalPrice    Int
+  status        String
+  paymentMethod String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer Customer    @relation(fields: [customerId], references: [id])
+  vendor   Vendor      @relation(fields: [vendorId], references: [id])
+  items    OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  productId String
+  orderId   String
+  quantity  Int
+  price     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  @@map("order_items")
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  productId  String
+  customerId String
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("cart_items")
+}
+
+model RecentlyViewed {
+  id         String   @id @default(uuid())
+  productId  String
+  customerId String
+  viewedAt   DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("recently_viewed")
+}
+
+model VendorFollow {
+  id         String   @id @default(uuid())
+  customerId String
+  vendorId   String
+  followedAt DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  vendor   Vendor   @relation(fields: [vendorId], references: [id])
+
+  @@map("vendor_follows")
 }
