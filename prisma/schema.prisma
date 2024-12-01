@@ -20,10 +20,10 @@ enum UserStatus {
 }
 
 model User {
-  id                 String     @id @default(uuid())
+  userId             String     @id @default(uuid())
   email              String     @unique
   password           String
-  role               UserRole
+  role               UserRole   @default(USER)
   needPasswordChange Boolean    @default(true)
   status             UserStatus @default(ACTIVE)
   createdAt          DateTime   @default(now())
@@ -35,7 +35,7 @@ model User {
 }
 
 model Vendor {
-  id            String   @id @default(uuid())
+  vendorId      String   @id @default(uuid())
   name          String
   email         String   @unique
   profilePhoto  String?
@@ -55,7 +55,7 @@ model Vendor {
 }
 
 model Customer {
-  id            String   @id @default(uuid())
+  customerId    String   @id @default(uuid())
   name          String
   email         String   @unique
   profilePhoto  String?
@@ -76,7 +76,7 @@ model Customer {
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  productId   String   @id @default(uuid())
   name        String
   description String?
   price       Int
@@ -88,8 +88,8 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  vendor         Vendor           @relation(fields: [vendorId], references: [id])
-  category       Category         @relation(fields: [categoryId], references: [id])
+  vendor         Vendor           @relation(fields: [vendorId], references: [vendorId])
+  category       Category         @relation(fields: [categoryId], references: [categoryId])
   reviews        Review[]
   orderItems     OrderItem[]
   cartItem       CartItem[]
@@ -99,10 +99,10 @@ model Product {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  categoryId String   @id @default(uuid())
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   products Product[]
 
@@ -110,7 +110,7 @@ model Category {
 }
 
 model Review {
-  id         String   @id @default(uuid())
+  reviewId   String   @id @default(uuid())
   rating     Int
   comment    String?
   productId  String
@@ -118,14 +118,14 @@ model Review {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  product  Product  @relation(fields: [productId], references: [id])
-  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [productId])
+  customer Customer @relation(fields: [customerId], references: [customerId])
 
   @@map("reviews")
 }
 
 model Order {
-  id            String   @id @default(uuid())
+  oderId        String   @id @default(uuid())
   customerId    String
   vendorId      String
   totalPrice    Int
@@ -134,62 +134,62 @@ model Order {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  customer Customer    @relation(fields: [customerId], references: [id])
-  vendor   Vendor      @relation(fields: [vendorId], references: [id])
+  customer Customer    @relation(fields: [customerId], references: [customerId])
+  vendor   Vendor      @relation(fields: [vendorId], references: [vendorId])
   items    OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
-  productId String
-  orderId   String
-  quantity  Int
-  price     Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  orderItemId String   @id @default(uuid())
+  productId   String
+  orderId     String
+  quantity    Int
+  price       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  product Product @relation(fields: [productId], references: [id])
-  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [productId])
+  order   Order   @relation(fields: [orderId], references: [oderId])
 
   @@map("order_items")
 }
 
 model CartItem {
-  id         String   @id @default(uuid())
+  cartItemId String   @id @default(uuid())
   productId  String
   customerId String
   quantity   Int
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  product  Product  @relation(fields: [productId], references: [id])
-  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [productId])
+  customer Customer @relation(fields: [customerId], references: [customerId])
 
   @@map("cart_items")
 }
 
 model RecentlyViewed {
-  id         String   @id @default(uuid())
-  productId  String
-  customerId String
-  viewedAt   DateTime @default(now())
+  recentlyViewedId String   @id @default(uuid())
+  productId        String
+  customerId       String
+  viewedAt         DateTime @default(now())
 
-  product  Product  @relation(fields: [productId], references: [id])
-  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [productId])
+  customer Customer @relation(fields: [customerId], references: [customerId])
 
   @@map("recently_viewed")
 }
 
 model VendorFollow {
-  id         String   @id @default(uuid())
-  customerId String
-  vendorId   String
-  followedAt DateTime @default(now())
+  vendorFollowId String   @id @default(uuid())
+  customerId     String
+  vendorId       String
+  followedAt     DateTime @default(now())
 
-  customer Customer @relation(fields: [customerId], references: [id])
-  vendor   Vendor   @relation(fields: [vendorId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [customerId])
+  vendor   Vendor   @relation(fields: [vendorId], references: [vendorId])
 
   @@map("vendor_follows")
 }

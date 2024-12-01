@@ -39,6 +39,10 @@ exports.AuthService = void 0;
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcrypt"));
 const prisma_1 = __importDefault(require("../../utils/prisma"));
+const AppError_1 = __importDefault(require("../../errors/AppError"));
+const jwtHelpers_1 = require("../../utils/jwtHelpers");
+const config_1 = __importDefault(require("../../config"));
+const emailSender_1 = __importDefault(require("../../utils/emailSender"));
 const createCustomerIntoDb = (req) => __awaiter(void 0, void 0, void 0, function* () {
     const hashedPassword = yield bcrypt.hash(req.body.password, 12);
     const userData = {
@@ -50,7 +54,7 @@ const createCustomerIntoDb = (req) => __awaiter(void 0, void 0, void 0, function
         yield transactionClient.user.create({
             data: userData,
         });
-        const createdCustomerData = yield transactionClient.customers.create({
+        const createdCustomerData = yield transactionClient.customer.create({
             data: req.body.customer,
         });
         return createdCustomerData;
@@ -75,7 +79,136 @@ const createVendorIntoDb = (req) => __awaiter(void 0, void 0, void 0, function* 
     }));
     return result;
 });
+const loginUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: payload.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const isCorrectPassword = yield bcrypt.compare(payload.password, userData.password);
+    if (!isCorrectPassword) {
+        throw new AppError_1.default(httpStatus.BAD_REQUEST, 'Incorrect Password!');
+    }
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    const refreshToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.refresh_token_secret, config_1.default.jwt.refresh_token_expires_in);
+    return {
+        accessToken,
+        refreshToken,
+        needPasswordChange: userData.needPasswordChange,
+    };
+});
+const refreshToken = (refreshToken) => __awaiter(void 0, void 0, void 0, function* () {
+    let decodedData;
+    try {
+        decodedData = jwtHelpers_1.jwtHelpers.verifyToken(refreshToken, config_1.default.jwt.refresh_token_secret);
+    }
+    catch (err) {
+        throw new AppError_1.default(httpStatus.FORBIDDEN, 'You are not authorized!');
+    }
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: decodedData.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const accessToken = jwtHelpers_1.jwtHelpers.generateToken({
+        email: userData.email,
+        role: userData.role,
+    }, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
+    return {
+        accessToken,
+        needPasswordChange: userData.needPasswordChange,
+    };
+});
+const changePassword = (user, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: user.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const isCorrectPassword = yield bcrypt.compare(payload.oldPassword, userData.password);
+    if (!isCorrectPassword) {
+        throw new AppError_1.default(httpStatus.BAD_REQUEST, 'Password incorrect!');
+    }
+    const hashedPassword = yield bcrypt.hash(payload.newPassword, 12);
+    yield prisma_1.default.user.update({
+        where: {
+            email: userData.email,
+        },
+        data: {
+            password: hashedPassword,
+            needPasswordChange: false,
+        },
+    });
+    return {
+        message: 'Password changed successfully!',
+    };
+});
+const forgotPassword = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const userData = yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            email: payload.email,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const resetPassToken = jwtHelpers_1.jwtHelpers.generateToken({ email: userData.email, role: userData.role }, config_1.default.jwt.reset_pass_secret, config_1.default.jwt.reset_pass_token_expires_in);
+    //console.log(resetPassToken)
+    const resetPassLink = config_1.default.reset_pass_link +
+        `?userId=${userData.createdAt}&token=${resetPassToken}`;
+    yield (0, emailSender_1.default)(userData.email, `
+     <div style="font-family: Arial, sans-serif; color: #333;">
+    <p>Dear User,</p>
+    <p>We received a request to reset your password. To proceed, please click the button below:</p>
+    <a href="${resetPassLink}" style="text-decoration: none;">
+        <button style="background-color: #007BFF; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+            Reset Password
+        </button>
+    </a>
+    <p>If you didn't request a password reset, please ignore this email or contact support if you have any questions.</p>
+    <p>Best regards,<br/>Your Company Team</p>
+</div>
+
+
+        `);
+});
+const resetPassword = (token, payload) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log({ token, payload });
+    yield prisma_1.default.user.findUniqueOrThrow({
+        where: {
+            userId: payload.id,
+            status: client_1.UserStatus.ACTIVE,
+        },
+    });
+    const isValidToken = jwtHelpers_1.jwtHelpers.verifyToken(token, config_1.default.jwt.reset_pass_secret);
+    if (!isValidToken) {
+        throw new AppError_1.default(httpStatus.FORBIDDEN, 'Forbidden!');
+    }
+    // hash password
+    const newPassword = yield bcrypt.hash(payload.password, 12);
+    // update into database
+    yield prisma_1.default.user.update({
+        where: {
+            userId: payload.id,
+        },
+        data: {
+            password: newPassword,
+        },
+    });
+});
 exports.AuthService = {
     createCustomerIntoDb,
     createVendorIntoDb,
+    loginUserIntoDb,
+    refreshToken,
+    changePassword,
+    forgotPassword,
+    resetPassword,
 };

@@ -1,4 +1,4 @@
-import { Customers, UserRole, UserStatus, Vendor } from '@prisma/client'
+import { Customer, UserRole, UserStatus, Vendor } from '@prisma/client'
 import * as bcrypt from 'bcrypt'
 import { Request } from 'express'
 import prisma from '../../utils/prisma'
@@ -8,7 +8,7 @@ import config from '../../config'
 import { Secret } from 'jsonwebtoken'
 import emailSender from '../../utils/emailSender'
 
-const createCustomerIntoDb = async (req: Request): Promise<Customers> => {
+const createCustomerIntoDb = async (req: Request): Promise<Customer> => {
   const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
 
   const userData = {
@@ -22,7 +22,7 @@ const createCustomerIntoDb = async (req: Request): Promise<Customers> => {
       data: userData,
     })
 
-    const createdCustomerData = await transactionClient.customers.create({
+    const createdCustomerData = await transactionClient.customer.create({
       data: req.body.customer,
     })
 
@@ -185,7 +185,8 @@ const forgotPassword = async (payload: { email: string }) => {
   //console.log(resetPassToken)
 
   const resetPassLink =
-    config.reset_pass_link + `?userId=${userData.id}&token=${resetPassToken}`
+    config.reset_pass_link +
+    `?userId=${userData.createdAt}&token=${resetPassToken}`
 
   await emailSender(
     userData.email,
@@ -215,7 +216,7 @@ const resetPassword = async (
 
   await prisma.user.findUniqueOrThrow({
     where: {
-      id: payload.id,
+      userId: payload.id,
       status: UserStatus.ACTIVE,
     },
   })
@@ -235,7 +236,7 @@ const resetPassword = async (
   // update into database
   await prisma.user.update({
     where: {
-      id: payload.id,
+      userId: payload.id,
     },
     data: {
       password: newPassword,
