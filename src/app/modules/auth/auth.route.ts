@@ -9,4 +9,6 @@ router.post('/create-vendor', AuthController.createVendor)
 
 router.post('/login', AuthController.loginUser)
 
+router.post('/refresh-token', AuthController.refreshToken)
+
 export const authRoutes = router
