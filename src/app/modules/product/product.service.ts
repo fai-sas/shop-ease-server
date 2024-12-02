@@ -5,26 +5,6 @@ import { TPaginationOptions } from '../../interface/pagination'
 import { paginationHelper } from '../../utils/pagination'
 import { productSearchableFields } from './product.constant'
 
-// const createProductIntoDb = async (user: TAuthUser, payload: Product) => {
-//   await prisma.vendor.findUniqueOrThrow({
-//     where: {
-//       email: user?.email,
-//     },
-//   })
-
-//   await prisma.category.findUniqueOrThrow({
-//     where: {
-//       categoryId: payload.categoryId,
-//     },
-//   })
-
-//   const result = await prisma.product.create({
-//     data: { ...payload, vendorId: user?.email },
-//   })
-
-//   return result
-// }
-
 const createProductIntoDb = async (user: TAuthUser, payload: Product) => {
   try {
     await prisma.vendor.findUniqueOrThrow({

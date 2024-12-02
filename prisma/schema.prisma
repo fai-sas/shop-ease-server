@@ -161,12 +161,12 @@ model CartItem {
   cartItemId String   @id @default(uuid())
   productId  String
   customerId String
-  quantity   Int
+  quantity   Int      @default(1)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   product  Product  @relation(fields: [productId], references: [productId])
-  customer Customer @relation(fields: [customerId], references: [customerId])
+  customer Customer @relation(fields: [customerId], references: [email])
 
   @@map("cart_items")
 }
