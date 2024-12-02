@@ -9,6 +9,18 @@ const router = express.Router()
 
 router.get('/', UserControllers.getAllUsers)
 
+router.get(
+  '/my-profile',
+  auth(UserRole.ADMIN, UserRole.VENDOR, UserRole.USER),
+  UserControllers.getMyProfile
+)
+
+router.get(
+  '/customer-profile',
+  auth(UserRole.ADMIN, UserRole.USER),
+  UserControllers.getCustomerProfile
+)
+
 router.get('/users/:userId', UserControllers.getSingleUser)
 
 router.get('/vendors', UserControllers.getAllVendors)

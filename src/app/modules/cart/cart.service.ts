@@ -1,33 +1,90 @@
 import { CartItem } from '@prisma/client'
 import { TAuthUser } from '../../interface/common'
 import prisma from '../../utils/prisma'
+import AppError from '../../errors/AppError'
+import httpStatus from 'http-status'
 
 const createCartIntoDb = async (user: TAuthUser, payload: CartItem) => {
-  try {
-    await prisma.user.findUniqueOrThrow({
-      where: {
-        email: user?.email,
-      },
-    })
-  } catch (error) {
-    throw new Error(`Vendor with email ${user?.email} not found.`)
-  }
-
-  try {
-    await prisma.product.findUniqueOrThrow({
-      where: {
-        productId: payload.productId,
-      },
-    })
-  } catch (error) {
-    throw new Error(`Category with ID ${payload.productId} not found.`)
-  }
-
-  const result = await prisma.cartItem.create({
-    data: { ...payload, customerId: user?.email },
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user?.email,
+    },
   })
 
-  return result
+  const product = await prisma.product.findUniqueOrThrow({
+    where: {
+      productId: payload.productId,
+    },
+  })
+
+  const existingCartItem = await prisma.cartItem.findFirst({
+    where: {
+      productId: payload.productId,
+      customerId: user?.email,
+    },
+  })
+
+  if (existingCartItem) {
+    const newQuantity = existingCartItem.quantity + (payload.quantity || 1)
+
+    if (newQuantity > product.inventory) {
+      throw new Error('Exceeds available stock')
+    }
+
+    const updatedCartItem = await prisma.cartItem.update({
+      where: {
+        cartItemId: existingCartItem.cartItemId,
+      },
+      data: {
+        quantity: newQuantity,
+        totalPrice: product.price * newQuantity,
+        updatedAt: new Date(),
+      },
+    })
+
+    const grandTotal = await prisma.cartItem.aggregate({
+      where: {
+        customerId: user?.email,
+      },
+      _sum: {
+        totalPrice: true,
+      },
+    })
+
+    return {
+      updatedCartItem,
+      grandTotalPrice: grandTotal._sum.totalPrice || 0,
+    }
+  }
+
+  const initialQuantity = payload.quantity || 1
+
+  if (initialQuantity > product.inventory) {
+    throw new Error('Exceeds available stock')
+  }
+
+  const newCartItem = await prisma.cartItem.create({
+    data: {
+      ...payload,
+      customerId: user?.email,
+      quantity: initialQuantity,
+      totalPrice: product.price * initialQuantity, // Set total price
+    },
+  })
+
+  const grandTotal = await prisma.cartItem.aggregate({
+    where: {
+      customerId: user?.email,
+    },
+    _sum: {
+      totalPrice: true,
+    },
+  })
+
+  return {
+    newCartItem,
+    grandTotalPrice: grandTotal._sum.totalPrice || 0,
+  }
 }
 
 const getAllCartsFromDb = async () => {

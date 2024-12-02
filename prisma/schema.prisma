@@ -158,12 +158,14 @@ model OrderItem {
 }
 
 model CartItem {
-  cartItemId String   @id @default(uuid())
-  productId  String
-  customerId String
-  quantity   Int      @default(1)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  cartItemId      String   @id @default(uuid())
+  productId       String
+  customerId      String
+  totalPrice      Float?
+  grandTotalPrice Float    @default(0.0)
+  quantity        Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   product  Product  @relation(fields: [productId], references: [productId])
   customer Customer @relation(fields: [customerId], references: [email])
