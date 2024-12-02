@@ -45,7 +45,7 @@ const updateCategoryIntoDb = async (
   return result
 }
 
-export const BookServices = {
+export const CategoryServices = {
   createCategoryIntoDb,
   getAllCategoriesFromDb,
   getSingleCategoryFromDb,
