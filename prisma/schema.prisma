@@ -38,7 +38,7 @@ model Vendor {
   vendorId      String   @id @default(uuid())
   name          String
   email         String   @unique
-  profilePhoto  String?
+  images        String?
   description   String?
   contactNumber String?
   isDeleted     Boolean  @default(false)
@@ -58,7 +58,7 @@ model Customer {
   customerId    String   @id @default(uuid())
   name          String
   email         String   @unique
-  profilePhoto  String?
+  images        String?
   contactNumber String
   isDeleted     Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -79,8 +79,9 @@ model Product {
   productId   String   @id @default(uuid())
   name        String
   description String?
+  images      String[]
   price       Int
-  discount    Int      @default(0)
+  discount    Int?     @default(0)
   inventory   Int
   isDeleted   Boolean  @default(false)
   categoryId  String
