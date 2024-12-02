@@ -38,7 +38,7 @@ const createVendorIntoDb = async (req: Request): Promise<Vendor> => {
   const userData = {
     email: req.body.vendor.email,
     password: hashedPassword,
-    role: UserRole.USER,
+    role: UserRole.VENDOR,
   }
 
   const result = await prisma.$transaction(async (transactionClient) => {
